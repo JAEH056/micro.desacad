@@ -1,0 +1,36 @@
+<?php
+namespace App\Models;
+
+use CodeIgniter\Model;
+
+class NewsModel extends Model
+{
+
+//    const TABLE = 'news';
+//    const ALLOWED_FIELDS = ['title', 'slug', 'body'];
+
+
+//    public function getNews() {
+//        $sql = "SELECT * FROM " . self::TABLE;
+        //echo $sql;
+//        $builder = $this->db->table(self::TABLE);
+       // $builder->where('id >= 3');
+//        $query = $builder->get();
+//        $r = $query->getResult();
+  //      var_dump($r);
+//        die();
+//    }
+    protected $table = 'news';
+    protected $allowedFields = ['title', 'slug', 'body', 'id'];
+    
+
+
+//}
+    public function getNews(string $slug = false)
+{
+     if($slug === false){
+       return $this->findAll();
+  }
+     return $this->where(['slug' => $slug])->first();
+}
+}
