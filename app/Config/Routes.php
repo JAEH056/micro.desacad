@@ -35,23 +35,22 @@ $routes->setAutoRoute(false);
 
 // We get a performance increase by specifying the default
 // route since we don'st have to scan directories.
-$routes->group('da',  function($routes) {
+$routes->group('da',  function ($routes) {
     require('Routes_DA.php');
 });
 
-$routes->group('ta', static function($routes) {
-    require('Routes_TA.php');
+$routes->group('ta', static function ($routes) {
+    require 'Routes_TA.php';
 });
 
-$routes->match(['get', 'post'],'/',          [Login::class, 'login']);
+$routes->match(['get', 'post'], '/',  [Login::class, 'login']);
 $routes->get('login/sesion1',                [Login::class, 'login']);
-$routes->get('menu_principal',                [Principal::class, 'index']);
-
+$routes->get('logout',                       [Login::class, 'logout']);
+$routes->get('menu_principal',               [Principal::class, 'index']);
 $routes->get('pagina/choose',                [Page::class, 'choose']);
 
-$routes->get('logout',                       [Login::class, 'logout']);
 //Ejemplo de ruta con filtro de permisos
-$routes->group('rol', ['filter' => 'sessionfilter:asesor'], function($routes) {
+$routes->group('rol', ['filter' => 'sessionfilter:asesor'], function ($routes) {
     $routes->get('usuarioi/pagina/choose',     [Page::class, 'choose'], ['filter' => 'sessionfilter:asesor']);
 });
 

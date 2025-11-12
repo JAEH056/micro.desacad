@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models\Tutorias;
 
 use CodeIgniter\Model;
@@ -11,12 +12,29 @@ class TutorModel extends Model
     protected $allowedFields = ['Id', 'Id_Usuario', 'Inicia', 'Termina'];
     protected $returnType    = \App\Entities\Tutorias\Tutor::class;
 
-    public function get(int $id) {
+    /**
+     * Devuelve los datos del tutor
+     * @param int $id
+     * @return array|object|null
+     */
+    public function get(int $id)
+    {
         return $this->where('Id', $id)->first();
     }
-    
-    public function findUsuarios(){
-    $sql = <<<EOL
+
+    /**
+     * Devuelve el id del tutor
+     * @param int $id ID Usuario
+     * @return array|object|null
+     */
+    public function getTutorId(int $id)
+    {
+        return $this->select('Id')->where('Id_Usuario', $id)->first();
+    }
+
+    public function findUsuarios()
+    {
+        $sql = <<<EOL
         SELECT
         u.Id AS Id_Usuario,
         CONCAT(u.Nombre, " ", u.Primer_Apellido, " ", u.Segundo_Apellido) AS Nombre
@@ -30,11 +48,12 @@ class TutorModel extends Model
             AND (t.Id_Usuario IS NULL OR t.Termina <= CURDATE())  
         EOL;
         $query = $this->db->query($sql);
-    $rows = $query->getCustomResultObject(\App\Entities\Tutorias\Tutorado::class);
-    return $rows;
+        $rows = $query->getCustomResultObject(\App\Entities\Tutorias\Tutorado::class);
+        return $rows;
     }
 
-    public function findTutores(){
+    public function findTutores()
+    {
         $sql = <<<EOL
             SELECT
             u.Id AS Id_Usuario,
@@ -53,9 +72,8 @@ class TutorModel extends Model
                 OR
                 o.Cargo_M = 'Docente'  
             EOL;
-            $query = $this->db->query($sql);
+        $query = $this->db->query($sql);
         $rows = $query->getCustomResultObject(\App\Entities\Tutorias\Tutorado::class);
         return $rows;
     }
-    
 }

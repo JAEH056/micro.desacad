@@ -28,7 +28,7 @@ class NewsModel extends Model
     public function updateNews(int $id, array $data) {
         
         if(! empty(array_diff(array_keys($data), $this->allowedFields))) {
-            throw new Exception('Datos con campos inválidos.');
+            throw new \Exception('Datos con campos inválidos.');
         }
         $this->where('id', $id)
              ->update($id, $data);

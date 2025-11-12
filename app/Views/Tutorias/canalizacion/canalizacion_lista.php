@@ -4,21 +4,20 @@
             <span class="col-sm-2"><?= esc($title) ?></span>
         </div>
     </div>
-    <div class="card-body"> 
-        <table class="Tabla"> 
+    <div class="card-body">
+        <table class="Tabla">
             <thead>
                 <tr>
-                    <th>tutor</th>
+                    <th>Tutor</th>
                     <th></th>
                 </tr>
             </thead>
             <tbody>
                 <?php foreach ($tutorados as $tutorado): ?>
-                <tr>
-                    <td><?= esc($tutorado->tutor) ?></td>
-                    
-                </tr>
-                <?php endforeach;?>
+                    <tr>
+                        <td><?= esc($tutorado->tutor) ?></td>
+                    </tr>
+                <?php endforeach; ?>
             </tbody>
         </table>
     </div>

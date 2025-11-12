@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models\Tutorias;
 
 use CodeIgniter\Model;
@@ -13,15 +14,17 @@ class TutoradoModel extends Model
     protected $allowedFields = ['Id', 'Id_Alumno', 'Id_Grupo', 'Fecha'];
     protected $returnType    = \App\Entities\Tutorias\Tutorado::class;
 
-    public function get(int $id) {
+    public function get(int $id)
+    {
         return $this->where('Id', $id)->first();
     }
-   
 
-    public function guardarTutorados(int $id_grupo, array $alumnos){
+
+    public function guardarTutorados(int $id_grupo, array $alumnos)
+    {
         $this->db;
         $data = [];
-        foreach($alumnos as $alumno) {
+        foreach ($alumnos as $alumno) {
             $data[] = [
                 'Id_Alumno'   => $alumno,
                 'Id_Grupo'    => $id_grupo,
@@ -30,15 +33,17 @@ class TutoradoModel extends Model
         if (!empty($data)) {
             $builder = $this->db->table('tutorado');
             $builder->insertBatch($data);
-        }    
+        }
     }
-    public function showTutorados(){
+    public function showTutorados()
+    {
         $sql = "SELECT * FROM tutorado";
         $query = $this->db->query($sql);
         return $query->getResultArray();
     }
 
-    public function findTutor() {
+    public function findTutor()
+    {
         $sql = <<<EOL
             SELECT
             t.Id,   
@@ -60,10 +65,11 @@ class TutoradoModel extends Model
             EOL;
         $query = $this->db->query($sql);
         $rows = $query->getCustomResultObject(\App\Entities\Tutorias\Tutorado::class);
-        return $rows; 
+        return $rows;
     }
-     
-    public function findTutorado(int $idGrupo){
+
+    public function findTutorado(int $idGrupo)
+    {
         $sql = <<<EOL
             SELECT
                 t.Id,
@@ -74,7 +80,7 @@ class TutoradoModel extends Model
                 g.Id AS Id_Grupo,
                 pro.Nombre AS Carrera 
             FROM
-                        tutor AS t                     
+                tutor AS t                     
                 JOIN grupo AS g ON g.Id_Tutor = t.Id
                 JOIN tutorado AS tt ON tt.Id_Grupo = g.Id
                 JOIN alumno AS a ON a.Id = tt.Id_Alumno
@@ -87,10 +93,11 @@ class TutoradoModel extends Model
             EOL;
         $query = $this->db->query($sql);
         $rows = $query->getCustomResultObject(\App\Entities\Tutorias\Tutorado::class);
-        return $rows; 
+        return $rows;
     }
 
-    public function tutoradosIndividuales(int $id, int $idGrupo){
+    public function tutoradosIndividuales(int $id, int $idGrupo)
+    {
         $sql = <<<EOL
         SELECT 
             a.Id AS Id_Alumno,
@@ -100,7 +107,7 @@ class TutoradoModel extends Model
             g.Id AS Id_Grupo,
             ti.Id AS Id_Tutoria
         FROM 
-                tutor AS t
+            tutor AS t
             JOIN Desarrollo.usuario AS u ON u.Id = t.Id_Usuario
             JOIN grupo AS g ON g.Id_Tutor = t.Id
             JOIN periodo_escolar AS pe ON pe.Id = g.Id_Periodo
@@ -115,10 +122,40 @@ class TutoradoModel extends Model
         EOL;
         $query = $this->db->query($sql);
         $rows = $query->getCustomResultObject(\App\Entities\Tutorias\Tutorado::class);
-        return $rows; 
+        return $rows;
     }
 
-    public function tutoradosTutoria(int $idAlumno, int $idGrupo){
+    public function tutoradosIndividualesRev1(int $id, int $idGrupo)
+    {
+        $sql = <<<EOL
+        SELECT
+            a.Id AS Id_Alumno,
+            a.Nc,
+            concat( a.Nombre, " ", a.Primer_Apellido, " ", a.Segundo_Apellido) AS Alumno,
+            GROUP_CONCAT(DISTINCT ti.Id ORDER BY ti.Id SEPARATOR ', ') AS Id_Tutoria,
+            GROUP_CONCAT(DISTINCT g.Id SEPARATOR ', ') AS Id_Grupo,
+            GROUP_CONCAT(DISTINCT t.Id SEPARATOR ', ') AS Id_Tutor
+        FROM
+            tutor AS t
+            JOIN grupo AS g ON g.Id_Tutor = t.Id
+            JOIN tutorado AS tt ON tt.Id_Grupo = g.Id
+            JOIN alumno AS a ON a.Id = tt.Id_Alumno
+            LEFT JOIN tutoria_individual AS ti ON ti.Id_Tutorado = tt.Id
+        WHERE
+            t.Id = $id
+            AND
+            g.Id = $idGrupo
+            AND
+            ti.Id IS NOT NULL
+        GROUP BY a.Id
+        EOL;
+        $query = $this->db->query($sql);
+        $rows = $query->getCustomResultObject(\App\Entities\Tutorias\Tutorado::class);
+        return $rows;
+    }
+
+    public function tutoradosTutoria(int $idAlumno, int $idGrupo)
+    {
         $sql = <<<EOL
         SELECT
         ti.Id AS Id_Tutoria
@@ -137,10 +174,11 @@ class TutoradoModel extends Model
         EOL;
         $query = $this->db->query($sql);
         $rows = $query->getRow(1, \App\Entities\Tutorias\Tutorado::class);
-        return $rows; 
+        return $rows;
     }
 
-    public function dataTutor(int $id){
+    public function dataTutor(int $id)
+    {
         $sql = <<<EOL
             SELECT
             concat( u.Nombre, " ", u.Primer_Apellido, " ", u.Segundo_Apellido) AS Tutor,
@@ -158,10 +196,11 @@ class TutoradoModel extends Model
             EOL;
         $query = $this->db->query($sql);
         $rows = $query->getCustomResultObject(\App\Entities\Tutorias\Tutorado::class);
-        return $rows; 
+        return $rows;
     }
 
-    public function showTutoria(int $id){
+    public function showTutoria(int $id)
+    {
         $sql = <<<EOL
         SELECT 
             tg.Id
@@ -176,9 +215,10 @@ class TutoradoModel extends Model
         EOL;
         $query = $this->db->query($sql);
         $rows = $query->getRow(1, \App\Entities\Tutorias\Tutorado::class);
-        return $rows; 
+        return $rows;
     }
-    public function findTutorados(int $id){
+    public function findTutorados(int $id)
+    {
         $sql = <<<EOL
             SELECT 
                 a.Id AS Id_Alumno,
@@ -202,9 +242,10 @@ class TutoradoModel extends Model
             EOL;
         $query = $this->db->query($sql);
         $rows = $query->getCustomResultObject(\App\Entities\Tutorias\Tutorado::class);
-        return $rows; 
+        return $rows;
     }
-    public function userGrupo(int $id){
+    public function userGrupo(int $id)
+    {
         $sql = <<<EOL
             SELECT 
                 g.Id AS Id_Grupo
@@ -223,9 +264,10 @@ class TutoradoModel extends Model
             EOL;
         $query = $this->db->query($sql);
         $rows = $query->getRow(1, \App\Entities\Tutorias\Tutorado::class);
-        return $rows; 
-        }
-    public function findIndividual(int $id_usuario){
+        return $rows;
+    }
+    public function findIndividual(int $id_usuario)
+    {
         $sql = <<<EOL
             SELECT 
                 a.Id AS Id_Alumno,
@@ -248,10 +290,11 @@ class TutoradoModel extends Model
             EOL;
         $query = $this->db->query($sql);
         $rows = $query->getCustomResultObject(\App\Entities\Tutorias\Tutorado::class);
-        return $rows; 
+        return $rows;
     }
 
-    public function findCanalizacion(int $idTutor, int $idGrupo){
+    public function findCanalizacion(int $idTutor, int $idGrupo)
+    {
         $sql = <<<EOL
             SELECT
             a.Nc,
@@ -274,10 +317,11 @@ class TutoradoModel extends Model
             EOL;
         $query = $this->db->query($sql);
         $rows = $query->getCustomResultObject(\App\Entities\Tutorias\Tutorado::class);
-        return $rows; 
+        return $rows;
     }
 
-    public function tutoria(int $idAlumno, int $idGrupo){
+    public function tutoria(int $idAlumno, int $idGrupo)
+    {
         $sql = <<<EOL
         SELECT
         ti.Id AS Id_Tutoria,
@@ -298,9 +342,10 @@ class TutoradoModel extends Model
         EOL;
         $query = $this->db->query($sql);
         $rows = $query->getRow(1, \App\Entities\Tutorias\Tutorado::class);
-        return $rows; 
+        return $rows;
     }
-    public function canalizacionAlumno(int $idAlumno, int $idGrupo){
+    public function canalizacionAlumno(int $idAlumno, int $idGrupo)
+    {
         $sql = <<<EOL
                 SELECT 
                 g.Id AS Id_Grupo,
@@ -331,10 +376,11 @@ class TutoradoModel extends Model
             EOL;
         $query = $this->db->query($sql);
         $rows = $query->getCustomResultObject(\App\Entities\Tutorias\Tutorado::class);
-        return $rows; 
+        return $rows;
     }
 
-    public function findTutores(){
+    public function findTutores()
+    {
         $sql = <<<EOL
             SELECT 
             concat( u.Nombre, " ", u.Primer_Apellido, " ", u.Segundo_Apellido) AS Tutor,
@@ -343,21 +389,23 @@ class TutoradoModel extends Model
                     tutor AS t
                 JOIN Desarrollo.usuario AS u ON u.Id = t.Id_Usuario
             EOL;
-            $query = $this->db->query($sql);
+        $query = $this->db->query($sql);
         $rows = $query->getCustomResultObject(\App\Entities\Tutorias\Tutorado::class);
         return $rows;
     }
 
-    public function findEducativo(){
+    public function findEducativo()
+    {
         $sql = <<<EOL
             SELECT * FROM programa_educativo
             EOL;
-            $query = $this->db->query($sql);
+        $query = $this->db->query($sql);
         $rows = $query->getCustomResultObject(\App\Entities\Tutorias\Tutorado::class);
         return $rows;
     }
 
-    public function showGrupo(int $idTutor, int $idGrupo){
+    public function showGrupo(int $idTutor, int $idGrupo)
+    {
         $sql = <<<EOL
             SELECT 
             g.Id AS Id_Grupo
@@ -374,12 +422,13 @@ class TutoradoModel extends Model
             AND
                 g.Id = $idGrupo
             EOL;
-            $query = $this->db->query($sql);
+        $query = $this->db->query($sql);
         $rows = $query->getRow(1, \App\Entities\Tutorias\Tutorado::class);
-        return $rows; 
+        return $rows;
     }
 
-    public function grupoId(int $idGrupo){
+    public function grupoId(int $idGrupo)
+    {
         $sql = <<<EOL
             SELECT 
             g.Id AS Id_Grupo
@@ -388,12 +437,33 @@ class TutoradoModel extends Model
             WHERE
                 g.Id = $idGrupo
             EOL;
-            $query = $this->db->query($sql);
+        $query = $this->db->query($sql);
         $rows = $query->getRow(1, \App\Entities\Tutorias\Tutorado::class);
-        return $rows; 
+        return $rows;
     }
 
-    public function seguimiento(int $id_canalizacion){
+    /**
+     * Devuelve el ID de la tutoria grupal
+     * @param int $idGrupo
+     * @return float|int|string|null
+     */
+    public function grupoIdTutoria(int $idGrupo)
+    {
+        $sql = <<<EOL
+            SELECT 
+            tg.Id AS Id_Grupo
+            FROM
+                tutoria_grupal AS tg                 
+            WHERE
+                tg.Id = $idGrupo
+            EOL;
+        $query = $this->db->query($sql);
+        $rows = $query->getRow(1, \App\Entities\Tutorias\Tutorado::class);
+        return $rows;
+    }
+
+    public function seguimiento(int $id_canalizacion)
+    {
         $sql = <<<EOL
             SELECT
                 concat( u.Nombre, " ", u.Primer_Apellido, " ", u.Segundo_Apellido) AS Tutor,
@@ -418,12 +488,13 @@ class TutoradoModel extends Model
             WHERE
                 c.Id = $id_canalizacion
             EOL;
-            $query = $this->db->query($sql);
+        $query = $this->db->query($sql);
         $rows = $query->getRow(1, \App\Entities\Tutorias\Tutorado::class);
-        return $rows; 
+        return $rows;
     }
 
-    public function grupoAlum(int $id){
+    public function grupoAlum(int $id)
+    {
         $sql = <<<EOL
             SELECT 
             g.Id AS Id_Grupo
@@ -436,11 +507,12 @@ class TutoradoModel extends Model
                 u.Id = $id
                 AND IF(pe.Termina IS NOT NULL, pe.termina >= NOW(), TRUE)
             EOL;
-            $query = $this->db->query($sql);
+        $query = $this->db->query($sql);
         $rows = $query->getRow(1, \App\Entities\Tutorias\Tutorado::class);
-        return $rows; 
+        return $rows;
     }
-    public function grupoTutoria(int $id){
+    public function grupoTutoria(int $id)
+    {
         $sql = <<<EOL
             SELECT
                 concat( u.Nombre, " ", u.Primer_Apellido, " ", u.Segundo_Apellido) AS Tutor,
@@ -455,11 +527,12 @@ class TutoradoModel extends Model
             WHERE
                 g.Id = $id
             EOL;
-    $query = $this->db->query($sql);
+        $query = $this->db->query($sql);
         $rows = $query->getRow(1, \App\Entities\Tutorias\Tutorado::class);
-        return $rows; 
+        return $rows;
     }
-    public function actividad(int $id){
+    public function actividad(int $id)
+    {
         $sql = <<<EOL
             SELECT 
             a.Descripcion
@@ -470,11 +543,12 @@ class TutoradoModel extends Model
             WHERE
                 g.Id = $id
             EOL;
-            $query = $this->db->query($sql);
+        $query = $this->db->query($sql);
         $rows = $query->getCustomResultObject(\App\Entities\Tutorias\Tutorado::class);
         return $rows;
     }
-    public function informe(int $id){
+    public function informe(int $id)
+    {
         $sql = <<<EOL
             SELECT 
             concat( a.Nombre, " ", a.Primer_Apellido, " ", a.Segundo_Apellido) AS Alumno,
@@ -498,19 +572,21 @@ class TutoradoModel extends Model
                 g.Id = $id
             GROUP BY tu.Id
             EOL;
-            $query = $this->db->query($sql);
+        $query = $this->db->query($sql);
         $rows = $query->getCustomResultObject(\App\Entities\Tutorias\Tutorado::class);
         return $rows;
     }
-    public function contParticipantes(int $id){
+    public function contParticipantes(int $id)
+    {
         $sql = <<<EOL
             SELECT COUNT(*) AS cantidad FROM tutorado AS t WHERE t.Id_Grupo = $id
             EOL;
-    $query = $this->db->query($sql);
+        $query = $this->db->query($sql);
         $rows = $query->getRow(1, \App\Entities\Tutorias\Tutorado::class);
-        return $rows; 
+        return $rows;
     }
-    public function contHombres(int $id){
+    public function contHombres(int $id)
+    {
         $sql = <<<EOL
             SELECT 
             COUNT(*) AS cantidad 
@@ -521,20 +597,27 @@ class TutoradoModel extends Model
             EOL;
         $query = $this->db->query($sql);
         $rows = $query->getRow(1, \App\Entities\Tutorias\Tutorado::class);
-        return $rows; 
+        return $rows;
     }
-    public function contMujeres(int $id){
+    public function contMujeres(int $id)
+    {
         $sql = <<<EOL
         SELECT COUNT(*) AS cantidad FROM tutorado AS t
         JOIN alumno AS a ON a.Id = t.Id_Alumno
         WHERE t.Id_Grupo =$id AND a.Sexo = 'M'
         EOL;
-    $query = $this->db->query($sql);
-    $rows = $query->getRow(1, \App\Entities\Tutorias\Tutorado::class);
-    return $rows; 
+        $query = $this->db->query($sql);
+        $rows = $query->getRow(1, \App\Entities\Tutorias\Tutorado::class);
+        return $rows;
     }
 
-    public function findGrupo(int $id){
+    /**
+     * Busca los grupos del tutor
+     * @param int $id ID Tutor
+     * @return array
+     */
+    public function findGrupo(int $id)
+    {
         $sql = <<<EOL
         SELECT 
         g.Id,
@@ -543,13 +626,13 @@ class TutoradoModel extends Model
         pe.Nombre AS Periodo,
         p.Nombre AS Carrera
         FROM
-                Desarrollo.usuario AS u
+            Desarrollo.usuario AS u
             JOIN tutorias.tutor AS t ON t.Id_Usuario = u.Id
             JOIN tutorias.grupo AS g ON g.Id_Tutor = t.Id
             JOIN tutorias.periodo_escolar AS pe ON pe.Id = g.Id_Periodo
             JOIN tutorias.programa_educativo AS p ON p.Id =g.Id_Programa
         WHERE
-            u.Id = $id  
+            t.Id = $id  
             AND IF(pe.Termina IS NOT NULL, pe.termina >= NOW(), TRUE)
         EOL;
         $query = $this->db->query($sql);
@@ -557,16 +640,70 @@ class TutoradoModel extends Model
         return $rows;
     }
 
-    public function showAsistencia(int $id){
+    /**
+     * Muestra la lista de assistencia de tutorados en el grupo
+     * @param int $id ID Grupo Tutoria
+     * @return array
+     */
+    public function showAsistencia(int $id): array
+    {
         $sql = <<<EOL
+            SELECT 
+                    COUNT(asi.Id) AS asistencia,
+                    CONCAT(a.Nombre, ' ', a.Primer_Apellido, ' ', a.Segundo_Apellido) AS Nombre,
+                    GROUP_CONCAT(t.Id) AS Id_Tutorado,
+                    t.Id AS Id_Tutorado, 
+                    a.Nc, 
+                    a.Curp, 
+                    a.Sexo,
+                    pe.Nombre AS Programa,
+                    GROUP_CONCAT(asi.Fecha) AS Fecha_Asistencia
+                FROM tutorias.tutoria_grupal 
+                JOIN tutorias.tutorado AS t ON t.Id_Grupo = tutoria_grupal.Id_Grupo 
+                JOIN alumno AS a ON a.Id = t.Id_Alumno 
+                JOIN grupo ON grupo.Id = tutoria_grupal.Id_Grupo
+                JOIN programa_educativo AS pe ON pe.Id = grupo.Id_Programa
+                LEFT JOIN asistencia AS asi ON tutoria_grupal.Id = asi.Id_Tutoria AND asi.Id_Tutorado = t.Id
+            WHERE tutoria_grupal.Id = $id
+            GROUP BY t.Id;
+        EOL;
+        $query = $this->db->query($sql);
+        $rows = $query->getCustomResultObject(\App\Entities\Tutorias\Tutorado::class);
+        return $rows;
+    }
 
+    /**
+     * Muestra la lista de acreditados en el grupo
+     * @param int $id ID Grupo Tutoria
+     * @return array
+     */
+    public function showAcreditados(int $id): array
+    {
+        $sql = <<<EOL
+                SELECT 
+                        COUNT(acre.Id) AS acreditado,
+                        COUNT(asi.Id) AS asistencias,
+                        CONCAT(a.Nombre, ' ', a.Primer_Apellido, ' ', a.Segundo_Apellido) AS Nombre, 
+                        t.Id AS Id_Tutorado,
+                        a.Nc, 
+                        a.Curp, 
+                        a.Sexo,
+                        pe.Nombre AS Programa,
+                        COUNT(asi.Fecha) AS Act_Asist,
+                        COUNT(act.Id) AS Num_actividades
+                FROM tutorias.tutoria_grupal 
+                JOIN tutorias.tutorado AS t ON t.Id_Grupo = tutoria_grupal.Id_Grupo 
+                JOIN alumno AS a ON a.Id = t.Id_Alumno 
+                JOIN grupo ON grupo.Id = tutoria_grupal.Id_Grupo
+                JOIN programa_educativo AS pe ON pe.Id = grupo.Id_Programa
+                JOIN actividades AS act ON tutoria_grupal.Id_Actividades = act.Id
+                LEFT JOIN acreditado AS acre ON t.Id = acre.Id_Tutorado
+                LEFT JOIN asistencia AS asi ON tutoria_grupal.Id = asi.Id_Tutoria AND asi.Id_Tutorado = t.Id
+                WHERE grupo.Id = $id
+                GROUP BY t.Id;
         EOL;
         $query = $this->db->query($sql);
         $rows = $query->getCustomResultObject(\App\Entities\Tutorias\Tutorado::class);
         return $rows;
     }
 }
-
-
-    
-   

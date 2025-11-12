@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models\Tutorias;
 
 use CodeIgniter\Model;
@@ -11,11 +12,13 @@ class TutoriaModel extends Model
     protected $allowedFields = ['Id', 'Id_Grupo', 'Id_Actividades', 'Horas', 'Fecha'];
     protected $returnType    = \App\Entities\Tutorias\Tutoria::class;
 
-    public function get(int $id) {
+    public function get(int $id)
+    {
         return $this->where('Id', $id)->first();
     }
 
-    public function findTutoria(int $id){
+    public function findTutoria(int $id)
+    {
         $sql = <<<EOL
             SELECT * FROM tutoria_grupal AS tg 
             WHERE tg.Id = $id
@@ -25,42 +28,64 @@ class TutoriaModel extends Model
         return $rows;
     }
 
-    public function guardarTutorados(int $id_tutoria, array $alumnos, string $fecha ){
-        $this->db;
+    /**
+     * Guarda las asistencias de los alumnos tutorados
+     * @param int $id_tutoria
+     * @param array $alumnos
+     * @param string $fecha
+     * @return bool
+     */
+    public function guardarTutorados(int $id_tutoria, array $alumnos, string $fecha): bool
+    {
         $data = [];
-        foreach($alumnos as $alumno) {
+        foreach ($alumnos as $alumno) {
             $data[] = [
                 'Id_Tutorado' => $alumno,
                 'Id_Tutoria'  => $id_tutoria,
                 'Fecha'       => $fecha,
             ];
         }
-        //var_dump($data);
-        //die;
-        if (!empty($data)) {
-            $builder = $this->db->table('asistencia');
-            $builder->insertBatch($data);
-        }    
+
+        if (empty($data)) {
+            return false;
+        }
+        $builder = $this->db->table('asistencia');
+        if ($builder->insertBatch($data) > 0) {
+            return true;
+        }
+        return false;
     }
 
-    public function guardarAcreditados(array $alumnos, string $fecha ){
+    /**
+     * Guarda la acreditacion de los alumnos tutorados
+     * @param array $alumnos
+     * @param string $fecha
+     * @return bool
+     */
+    public function guardarAcreditados(array $alumnos, string $fecha): bool
+    {
         $this->db;
         $data = [];
-        foreach($alumnos as $alumno) {
+        foreach ($alumnos as $alumno) {
             $data[] = [
                 'Id_Tutorado' => $alumno,
+                'Acreditado'  => 'acreditado',
                 'Fecha'       => $fecha,
             ];
         }
-        //var_dump($data);
-        //die;
-        if (!empty($data)) {
-            $builder = $this->db->table('acreditado');
-            $builder->insertBatch($data);
-        }    
+
+        if (empty($data)) {
+            return false;
+        }
+        $builder = $this->db->table('acreditado');
+        if ($builder->insertBatch($data) > 0) {
+            return true;
+        }
+        return false;
     }
 
-    public function findTutorias(int $id_grupo){
+    public function findTutorias(int $id_grupo)
+    {
         $sql = <<<EOL
             SELECT 
                 tg.Id AS Id_Tutoria,
@@ -85,10 +110,11 @@ class TutoriaModel extends Model
             EOL;
         $query = $this->db->query($sql);
         $rows = $query->getCustomResultObject(\App\Entities\Tutorias\Tutorado::class);
-        return $rows; 
+        return $rows;
     }
 
-    public function showTutorias(int $idGrupo){
+    public function showTutorias(int $idGrupo)
+    {
         $sql = <<<EOL
             SELECT 
             g.Id AS Id_Grupo,
@@ -105,9 +131,10 @@ class TutoriaModel extends Model
             EOL;
         $query = $this->db->query($sql);
         $rows = $query->getCustomResultObject(\App\Entities\Tutorias\Tutorado::class);
-        return $rows; 
+        return $rows;
     }
-    public function showGrupo(int $id){
+    public function showGrupo(int $id)
+    {
         $sql = <<<EOL
             SELECT
             g.Id AS Id_Grupo
@@ -120,7 +147,8 @@ class TutoriaModel extends Model
         $rows = $query->getRow(1, \App\Entities\Tutorias\Tutoria::class);
         return $rows;
     }
-    public function tutoriaGrupal(int $id){
+    public function tutoriaGrupal(int $id)
+    {
         $sql = <<<EOL
             SELECT
             tg.Id AS Id_Tutoria

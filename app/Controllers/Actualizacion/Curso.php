@@ -833,8 +833,8 @@ class Curso extends BaseController {
         $secuencia  = $smodel->find($id_curso);
         $secu  = $smodel->findTema($id_curso);
         $participantes = $model->contParticipantes($id_curso);
-
-        $dompdf->set_option('defaultFont', 'Montserrat-Black.ttf');
+        
+        $dompdf->set_option( 'defaultFont', 'Montserrat-Black');
         $data = [
             'title'         => 'Plan de sesión',
             'curso'         => $curso,
@@ -918,7 +918,7 @@ class Curso extends BaseController {
     }
     public function impReporte(int $id_curso){
         $dompdf = new Dompdf();
-        $dompdf->set_option("enable_remote", true);
+        $dompdf->set_option("isRemoteEnabled", true);
         $model = model(CursoModel::class);
         $rmodel = model(ReporteModel::class);
 

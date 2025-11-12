@@ -1,48 +1,80 @@
 <?php
+
 namespace App\Controllers\Tutorias;
 
-use CodeIgniter\Controller;
 use App\Controllers\BaseController;
-
-use App\Models\Tutorias\TutoradoModel;
-use App\Entities\Tutorias\Tutorado as TutoradoEntity;
 use App\Models\Tutorias\AlumnoModel;
 use App\Entities\Tutorias\Alumno as AlumnoEntity;
+use CodeIgniter\HTTP\RedirectResponse;
+use CodeIgniter\HTTP\ResponseInterface;
 
-use CodeIgniter\Exceptions\PageNotFoundException;
+class Alumno extends BaseController
+{
 
-class Alumno extends BaseController {
+    private $alumnoM;
+    public function __construct()
+    {
+        $this->alumnoM = new AlumnoModel();
+    }
+    public function index()
+    {
+        // ...
+    }
 
-    public function showAlumnos(){
-        $model = model(AlumnoModel::class);
-
-        $alumnos = $model->findAlumn();
+    /**
+     * Muestra una lista de alumnos en tutorias
+     * @return ResponseInterface
+     */
+    public function showAlumnos(): ResponseInterface
+    {
+        $alumnos = $this->alumnoM->findAlumn();
 
         $data = [
             'title' => 'Alumnos',
             'alumnos' => $alumnos,
-       ];
+        ];
 
-        return view('templates/header', $data)
-            . view('Tutorias/alumnos/alumno_ver', $data)
-            . view('templates/footer');
+        return $this->response
+            ->setBody(
+                view('templates/header', $data)
+                    . view('Tutorias/alumnos/alumno_ver')
+                    . view('templates/footer')
+            )
+            ->setStatusCode(ResponseInterface::HTTP_OK)
+            ->setContentType('text/html');
     }
 
-    public function crearAlumno()
+
+    /**
+     * Muestra la vista de crear alumno
+     * @return ResponseInterface
+     */
+    public function showCrearAlumno(): ResponseInterface
+    {
+        helper('form');
+        $data = [
+            'title' => 'Crear nuevo alumno'
+        ];
+
+        return $this->response
+            ->setBody(
+                view('templates/header', $data)
+                    . view('Tutorias/alumnos/alumnos_crear')
+                    . view('templates/footer')
+            )
+            ->setStatusCode(ResponseInterface::HTTP_OK)
+            ->setContentType('text/html');
+    }
+
+    /**
+     * Crea un nuevo alumno
+     * @return RedirectResponse
+     */
+    public function crearAlumno(): RedirectResponse
     {
         helper('form');
 
-        $data = [
-            'title' => 'Crear un nuevo alumno'
-        ];
-        
-        if($this->request->is('get')){
-            return view('templates/header', $data)
-        .        view('Tutorias/alumnos/alumnos_crear', $data)
-        .        view('templates/footer');
-        }
-
-        $post= $this->request->getPost(['Id', 'Nombre', 'Primer_Apellido', 'Segundo_Apellido', 'Curp', 'Nc', 'Sexo']);
+        $post = $this->request->getPost(['Id', 'Nombre', 'Primer_Apellido', 'Segundo_Apellido', 'Curp', 'Nc', 'Sexo']);
 
         $sonValidos = $this->validateData($post, [
             'Nombre'            => 'required|max_length[255]|min_length[3]',
@@ -53,13 +85,9 @@ class Alumno extends BaseController {
             'Sexo'              => 'required|in_list[H,M]',
         ]);
 
-        if (! $sonValidos ) {
-		    return view('templates/header', $data)
-                . view('Tutorias/alumnos/alumnos_crear')
-                . view('templates/footer');
+        if (! $sonValidos) {
+            return redirect()->to(url_to('\\' . self::class . '::showCrearAlumno'))->withInput()->with('error', $this->validator->getErrors());
         }
-
-        $model =  model(AlumnoModel::class);
 
         $alumno = new AlumnoEntity();
         $alumno->Nombre            = $post['Nombre'];
@@ -69,10 +97,8 @@ class Alumno extends BaseController {
         $alumno->Nc                = $post['Nc'];
         $alumno->Sexo              = $post['Sexo'];
 
-        $model->save($alumno);
+        $this->alumnoM->save($alumno);
 
-        return $this->response->redirect(url_to('\\' . Alumno::class .'::showAlumnos'));
-
+        return redirect()->to(url_to('\\' . self::class . '::showAlumnos'))->with('mensaje', 'Alumno creado con exito.');
     }
-    
 }

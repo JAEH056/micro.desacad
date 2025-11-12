@@ -1,93 +1,92 @@
 <?php
+
 namespace App\Controllers\Tutorias;
 
-use CodeIgniter\Controller;
 use App\Controllers\BaseController;
 
 use App\Models\Tutorias\TutoradoModel;
 use App\Entities\Tutorias\Tutorado as TutoradoEntity;
 use App\Models\Tutorias\ActividadModel;
-use App\Entities\Tutorias\Actividad as ActividadEntity;
 use App\Models\Tutorias\AlumnoModel;
-use App\Entities\Tutorias\Alumno as AlumnoEntity;
-use App\Models\Tutorias\PeriodoModel;
-use App\Entities\Tutorias\Periodo as PeriodoEntity;
-use App\Models\Tutorias\CanalizacionModel;
-use App\Entities\Tutorias\Canalizacion as CanalizacionEntity;
-use App\Models\Tutorias\IndividualModel;
-use App\Entities\Tutorias\Individual as IndividualEntity;
-use App\Models\Tutorias\GrupoModel;
-use App\Entities\Tutorias\Grupo as GrupoEntity;
 use App\Models\Tutorias\TutorModel;
-use App\Entities\Tutorias\Tutor as TutorEntity;
 use App\Models\Tutorias\TutoriaModel;
 use App\Entities\Tutorias\Tutoria as TutoriaEntity;
-use App\Models\Tutorias\DepartamentoModel;
-use App\Entities\Tutorias\Departamento as DepartamentoEntity;
-use Dompdf\Dompdf;
 use CodeIgniter\Exceptions\PageNotFoundException;
+use CodeIgniter\HTTP\ResponseInterface;
 
-class Tutorado extends BaseController {
-
-    public function showTutores()
+class Tutorado extends BaseController
+{
+    private $tutoradoM;
+    public function __construct()
     {
-        $model = model(TutoradoModel::class);
+        $this->tutoradoM = new TutoradoModel();
+    }
 
-        $tutorados = $model->findTutor();
+    public function showTutores(): ResponseInterface
+    {
+        $tutorados = $this->tutoradoM->findTutor();
 
         $data = [
-            'title' => 'Tutores',
+            'title' => 'Lista de Grupos',
             'tutorados' => $tutorados,
-       ];
+        ];
 
-        return view('templates/header', $data)
-            . view('Tutorias/tutorado/tutorado_lista', $data)
-            . view('templates/footer');
+        return $this->response
+            ->setBody(
+                view('templates/header', $data)
+                    . view('Tutorias/tutorado/tutorado_lista')
+                    . view('templates/footer')
+            )
+            ->setStatusCode(ResponseInterface::HTTP_OK)
+            ->setContentType('text/html');
     }
 
-    public function tutores(){
-        $model = model(TutorModel::class);
-
-        $tutores = $model->findTutores();
-
-        $data = [
-            'title' => 'Tutorados',
-            'tutores' => $tutores,
-       ];
-
-        return view('templates/header', $data)
-            . view('Tutorias/tutorado/tutorado_tutores', $data)
-            . view('templates/footer');
-    }
-
-    public function updateTutor(int $id=0){
-
+    /**
+     * Vista del formulario para actualizar los datos del tutor
+     * @param int $id ID del tutor
+     * @return ResponseInterface
+     */
+    public function showUpdateTutor(int $id = 0): ResponseInterface
+    {
         $model = model(TutorModel::class);
 
         $data = [
             'title'  => 'Actualiza las fechas',
             'tutor'  => $model->get($id),
         ];
+        return $this->response
+            ->setBody(
+                view('templates/header', $data)
+                    . view('Tutorias/tutorado/tutor_editar')
+                    . view('templates/footer')
+            )
+            ->setStatusCode(ResponseInterface::HTTP_OK)
+            ->setContentType('text/html');
+    }
 
-        if($this->request->is('get')) {
-            return view('templates/header', $data)
-		        . view('Tutorias/tutorado/tutor_editar')
-		        . view('templates/footer');
-        }
+    /**
+     * Actualiza los datos del tutor
+     * @param int $id ID del tutor
+     * @return ResponseInterface
+     */
+    public function updateTutor(int $id = 0): ResponseInterface
+    {
+
+        $model = model(TutorModel::class);
 
         $id = $this->request->getpost('Id');
-        $post = $this->request->getPost(['Id_Usuario', 'Inicia', 'Termina']);
-        
-        $sonValidos = $this->validateData($post, [
+        $data = $this->request->getPost(['Id_Usuario', 'Inicia', 'Termina']);
+
+        $sonValidos = $this->validateData($data, [
             'Id_Usuario'  => 'required|numeric',
             'Inicia'      => 'required|valid_date',
             'Termina'     => ['valid_date', static function ($value, $data, &$error, $field) {
-                if( empty($value) ) return true;
+                if (empty($value)) return true;
 
                 $inicia =  \DateTime::createFromFormat('Y-m-d', $data['Inicia'])->getTimestamp();
                 $termina = \DateTime::createFromFormat('Y-m-d', $value)->getTimestamp();
 
-                if( $termina < $inicia){
+                if ($termina < $inicia) {
                     $error = 'La fecha final no puede ser anterior a la fecha inicial';
                     return false;
                 }
@@ -95,34 +94,56 @@ class Tutorado extends BaseController {
             }],
         ]);
 
-        if (! $sonValidos ) {
-            return redirect()->back()->withInput();
+        if (! $sonValidos) {
+            session()->setFlashdata('error', $this->validator->getErrors());
+            return $this->response->redirect(url_to('\\' . Tutorado::class . '::showUpdateTutor', $id));
         }
-    
-        $model->update($id, $post);
-        return $this->response->redirect(url_to('\\' .Tutorado::class .'::tutor'));
+
+        if (!$model->update($id, $data)) {
+            session()->setFlashdata('error', 'Error en el proceso de actualizar los datos del tutor.');
+            return $this->response->redirect(url_to('\\' . Tutorado::class . '::showUpdateTutor', $id));
+        }
+
+        session()->setFlashdata('mensaje', 'Datos actualizados correctamente.');
+        return $this->response->redirect(url_to('\\' . Tutor::class . '::showListaTutores'));
     }
 
-    public function showTutorias(int $id, int $id_grupo){
+    /**
+     * Muestra las tutorias del asesor
+     * @param int $id_grupo ID grupo asesor
+     * @return ResponseInterface
+     */
+    public function showTutorias(int $id_grupo): ResponseInterface
+    {
         $model = model(TutoriaModel::class);
         $tutorias = $model->findTutorias($id_grupo);
-        $gmodel     = model(TutoradoModel::class);
-        $grupo      = $gmodel->grupoId($id_grupo);
+        $grupo      = $this->tutoradoM->grupoIdTutoria($id_grupo);
 
         $data = [
-            'title' => 'Tutorias del grupo',
+            'title' => 'Tutorias del Grupo',
             'tutorias' => $tutorias,
             'grupo'     => $grupo,
-       ];
-       return view('templates/header', $data)
-            . view('Tutorias/tutorado/tutoria_mostrar', $data)
-            . view('templates/footer');
+            'ID_Grupo_A' => $id_grupo, //Grupo del asesor
+        ];
+
+        return $this->response
+            ->setBody(
+                view('templates/header', $data)
+                    . view('Tutorias/tutorado/tutoria_mostrar')
+                    . view('templates/footer')
+            )
+            ->setStatusCode(ResponseInterface::HTTP_OK)
+            ->setContentType('text/html');
     }
 
-    public function createTutoria(int $idGrupo){
-
-        $model = model(TutoradoModel::class);
-        $grupo = $model->grupoId($idGrupo);
+    /**
+     * MUestra el formulario para crear una nueva tutoria
+     * @param int $idGrupo
+     * @return ResponseInterface
+     */
+    public function showCreateTutoria(int $idGrupo): ResponseInterface
+    {
+        $grupo = $this->tutoradoM->grupoId($idGrupo);
 
         $amodel       = model(ActividadModel::class);
         $actividad    = $amodel->findActividad();
@@ -136,11 +157,25 @@ class Tutorado extends BaseController {
             'actividad'    => $nactividad,
             'grupo'        => $grupo,
         ];
-        if($this->request->is('get')) {
-            return view('templates/header', $data)
-		        . view('Tutorias/tutorado/tutoria_crear')
-		        . view('templates/footer');
-        }
+
+        return $this->response
+            ->setBody(
+                view('templates/header', $data)
+                    . view('Tutorias/tutorado/tutoria_crear')
+                    . view('templates/footer')
+            )
+            ->setStatusCode(ResponseInterface::HTTP_OK)
+            ->setContentType('text/html');
+    }
+
+    /**
+     * Crea una nueva tutoria
+     * @param int $idGrupo
+     * @return ResponseInterface|string
+     */
+    public function createTutoria(int $idGrupo)
+    {
+
         helper('form');
         $post = $this->request->getPost(['Id_Grupo', 'Id_Actividades', 'Horas', 'Fecha']);
 
@@ -148,146 +183,78 @@ class Tutorado extends BaseController {
             'Id_Grupo'       => 'required|numeric',
             'Id_Actividades' => 'required|numeric',
             'Horas'          => 'required|numeric',
-            'Fecha'          => 'required|valid_date',    
+            'Fecha'          => 'required|valid_date',
         ]);
 
-        if (! $sonValidos ) {
-		    return view('templates/header', $data)
-                . view('Tutorias/tutorado/tutoria_crear')
-                . view('templates/footer');
+        if (! $sonValidos) {
+            session()->setFlashdata('error', $this->validator->getErrors());
+            return $this->response->redirect(url_to('\\' . Tutorado::class . '::showCreateTutoria', $idGrupo));
         }
-        
+
         $model =  model(TutoriaModel::class);
-        
+
         $tutoria = new TutoriaEntity();
         $tutoria->Id_Grupo        = $post['Id_Grupo'];
         $tutoria->Id_Actividades  = $post['Id_Actividades'];
         $tutoria->Horas           = $post['Horas'];
         $tutoria->Fecha           = $post['Fecha'];
-      
-        $model->save($tutoria);
-        $usuario = session_get('usuario');
-        $id_grupo = $post['Id_Grupo'];
-        return $this->response->redirect(url_to('\\' . Tutorado::class .'::showTutorias', $usuario->Id, $id_grupo));
-        
-    }
-    public function addGrupo(){
-        $pmodel    = model(PeriodoModel::class);
-        $periodo   = $pmodel->findPeriodo();
-        $nPeriodo  = [];
-        foreach ($periodo as $p) {
-            $nperiodo[$p->Id] = $p->Nombre;
+
+        if (!$model->save($tutoria)) {
+            session()->setFlashdata('error', ['error' => 'Error en el proceso de crear la tutoria.']);
+            return $this->response->redirect(url_to('\\' . Tutorado::class . '::showCreateTutoria', $idGrupo));
         }
-
-        $tmodel    = model(TutoradoModel::class);
-        $tutor   = $tmodel->findTutores();
-        $nTutor  = [];
-        foreach ($tutor as $t) {
-            $ntutor[$t->Id] = $t->Tutor;
-        }
-
-        $emodel     = model(TutoradoModel::class);
-        $programa  = $emodel->findEducativo();
-        $nEducativo = [];
-        foreach ($programa as $e) {
-            $neducativo[$e->Id] = $e->Nombre;
-        }
-
-        $data = [
-            'title'        => 'Crear un nueva canalización',
-            'periodo'      => $nperiodo,
-            'tutor'        => $ntutor,
-            'programa'     => $neducativo,
-        ];
-        if($this->request->is('get')) {
-            return view('templates/header', $data)
-		        . view('Tutorias/grupo/grupo_agregar')
-		        . view('templates/footer');
-        }
-        helper('form');
-        $post = $this->request->getPost(['Id_Periodo', 'Id_Tutor', 'Id_Programa', 'Fecha', 'Semestre']);
-
-        $sonValidos = $this->validateData($post, [
-            'Id_Periodo'    => 'required|numeric',
-            'Id_Tutor'      => 'required|numeric',
-            'Id_Programa'   => 'required|numeric',
-            'Fecha'         => 'required|valid_date',
-            'Semestre'      => 'required|max_length[255]|min_length[3]',
-            
-        ]);
-
-        if (! $sonValidos ) {
-		    return view('templates/header', $data)
-                . view('Tutorias/grupo/grupo_agregar')
-                . view('templates/footer');
-        }
-        
-        $model =  model(GrupoModel::class);
-        
-        $grupo = new GrupoEntity();
-        $grupo->Id_Periodo        = $post['Id_Periodo'];
-        $grupo->Id_Tutor          = $post['Id_Tutor'];
-        $grupo->Id_Programa       = $post['Id_Programa'];
-        $grupo->Fecha             = $post['Fecha'];
-        $grupo->Semestre          = $post['Semestre'];
-
-        
-        $idGrupo = $model->insert($grupo);
-        return $this->response->redirect(url_to('\\' . Tutorado::class .'::addTutorados', $idGrupo));
-        
+        session()->setFlashdata('mensaje', 'Tutoria creada exitosmente.');
+        return $this->response->redirect(url_to('\\' . Tutorado::class . '::showTutorias', $idGrupo));
     }
 
-    public function addTutorados(int $idGrupo){
-        helper('form');
-
-        $model = model(TutoradoModel::class);
-        $grupo = $model->grupoId($idGrupo);
+    public function showAddTutorados(int $idGrupo): ResponseInterface
+    {
+        $grupo = $this->tutoradoM->grupoId($idGrupo);
 
         $amodel  = model(AlumnoModel::class);
         $alumnos = $amodel->findAlumn();
 
         $data = [
             'title' => 'Agregar Alumnos',
-            'alumnos'   => $alumnos, 
-            'grupo'     => $grupo,       
+            'alumnos'   => $alumnos,
+            'grupo'     => $grupo,
         ];
-        if($this->request->is('get')) {
-            return view('templates/header', $data)
-                . view('Tutorias/tutorado/tutorado_addTutorados')
-                . view('templates/footer');
-        }
-        $tutorados = $model->showTutorados();
-        // Recibiendo datos
+        return $this->response
+            ->setBody(
+                view('templates/header', $data)
+                    . view('Tutorias/tutorado/tutorado_addTutorados')
+                    . view('templates/footer')
+            )
+            ->setStatusCode(ResponseInterface::HTTP_OK)
+            ->setContentType('text/html');
+    }
+
+    public function addTutorados(int $idGrupo): ResponseInterface
+    {
+        helper('form');
+
         $post   = $this->request->getPost(['Id_Grupo', 'alumnos']);
-       //var_dump($post);
-       //die;
-       
+
         $sonValidos = $this->validateData($post, [
             'Id_Grupo'     => 'required|numeric', // Campo oculto
         ]);
 
-        if (! $sonValidos ) {
-		    return view('templates/header', $data)
-        . view('Tutorias/tutorado/tutorado_addTutorados', $data)
-        . view('templates/footer');
+        if (! $sonValidos) {
+            return $this->response->redirect(url_to('\\' . Tutorado::class . '::showAddTutorados', $idGrupo));
         }
-        //var_dump($post);
-        //die;
-        $tutorado  =   $model->guardarTutorados(
+
+        $this->tutoradoM->guardarTutorados(
             $post['Id_Grupo'],
             $post['alumnos'],
-            
         );
-        
-        return $this->response->redirect(url_to('\\' . Tutorado::class .'::showTutores'));
 
+        return $this->response->redirect(url_to('\\' . Tutorado::class . '::showTutores'));
     }
 
-    public function showTutorados(int $id_grupo)
+    public function showTutorados(int $id_grupo): ResponseInterface
     {
-        $model = model(TutoradoModel::class);
-        $tutorados = $model->findTutorado($id_grupo);
-        $grupo     = $model->grupoId($id_grupo);
+        $tutorados = $this->tutoradoM->findTutorado($id_grupo);
+        $grupo     = $this->tutoradoM->grupoId($id_grupo);
 
         $amodel = model(AlumnoModel::class);
         $alumno = $amodel->findAlumn();
@@ -297,196 +264,112 @@ class Tutorado extends BaseController {
         }
 
         $data = [
-            'title' => 'Tutorados',
+            'title' => 'Lista de Tutorados',
             'tutorados' => $tutorados,
             'grupo'     => $grupo,
             'alumno'    => $nalumno,
         ];
-        return view('templates/header', $data)
-        . view('Tutorias/tutorado/tutorado_tutorados', $data)
-        . view('templates/footer');
+        return $this->response
+            ->setBody(
+                view('templates/header', $data)
+                    . view('Tutorias/tutorado/tutorado_tutorados')
+                    . view('templates/footer')
+            )
+            ->setStatusCode(ResponseInterface::HTTP_OK)
+            ->setContentType('text/html');
     }
 
-    public function addTutorado(){
+    public function addTutorado(): ResponseInterface
+    {
         $post = $this->request->getPost(['Id_Alumno', 'Id_Grupo']);
-       
+
         $sonValidos = $this->validateData($post, [
             'Id_Alumno'    => 'required|numeric',
             'Id_Grupo'     => 'required|numeric',
         ]);
 
-        if (! $sonValidos ) {
-            $data = [
-                'title'          => 'Agregar Alumnos',
-               // 'id_inscripcion' => $id_grupo,
-            ];
-		    return view('templates/header', $data)
-        . view('Tutorias/tutorado/tutorado_tutorados', $data)
-        . view('templates/footer');
+        if (!$sonValidos) {
+            session()->setFlashdata('error', $this->validator->getErrors());
+            return $this->response->redirect(url_to('\\' . Tutorado::class . '::showTutorados', $post['Id_Grupo']));
         }
-        
-        $model =  model(TutoradoModel::class);
-        
+
         $tutorado = new TutoradoEntity();
         $tutorado->Id_Alumno   = $post['Id_Alumno'];
         $tutorado->Id_Grupo    = $post['Id_Grupo'];
 
-        $model->save($tutorado);
-        $id_grupo = $post['Id_Grupo'];
-        return $this->response->redirect(url_to('\\' . Tutorado::class .'::showTutorados', $id_grupo));
+        $this->tutoradoM->save($tutorado);
 
+        session()->setFlashdata('mensaje', 'Alumno agregado correctamente.');
+        return $this->response->redirect(url_to('\\' . Tutorado::class . '::showTutorados', $post['Id_Grupo']));
     }
-    
-    public function showIndividuales(int $id, int $id_grupo)
+
+    public function dataTutor(int $id)
     {
-        $model          = model(TutoradoModel::class);
-        $canalizaciones = $model->tutoradosIndividuales($id, $id_grupo);
-        
-
-        $data = [
-            'title'          => 'Tutorados',
-            'canalizaciones' => $canalizaciones,
-        ];
-        return view('templates/header', $data)
-        . view('Tutorias/tutorado/tutorados_canalizacion', $data)
-        . view('templates/footer');
-    }
-
-    public function dataTutor(int $id){
-        $model = model(TutoradoModel::class);
-
-        $tutor = $model->dataTutor($id);
+        $tutor = $this->tutoradoM->dataTutor($id);
 
         $data = [
             'title' => 'Tutorados',
             'tutor' => $tutor,
         ];
 
-        return view('templates/header', $data)
-        . view('Tutorias/tutorado/tutorado_tutor', $data)
-        . view('templates/footer');
+        return $this->response
+            ->setBody(
+                view('templates/header', $data)
+                    . view('Tutorias/tutorado/tutorado_tutor')
+                    . view('templates/footer')
+            )
+            ->setStatusCode(ResponseInterface::HTTP_OK)
+            ->setContentType('text/html');
     }
 
-    public function findTutorados(int $id)
+    public function findTutorados(int $id): ResponseInterface
     {
-        $model     = model(TutoradoModel::class);
-        $tutorados = $model->findTutorados($id);
-        $grupo     = $model->grupoAlum($id);
+        $tutorados = $this->tutoradoM->findTutorados($id);
+        $grupo     = $this->tutoradoM->grupoAlum($id);
 
-        if (empty($tutorados) ) {
-            throw new PageNotFoundException('No se encontro un grupo' .$id);           
+        if (empty($tutorados)) {
+            throw new PageNotFoundException('No se encontro un grupo' . $id);
         }
 
-         $data = [
+        $data = [
             'title' => 'Tutorados',
             'grupo'     => $grupo,
             'tutorados' => $tutorados,
         ];
-
-        return view('templates/header', $data)
-        . view('Tutorias/tutorado/tutorado_participantes', $data)
-        . view('templates/footer');
+        return $this->response
+            ->setBody(
+                view('templates/header', $data)
+                    . view('Tutorias/tutorado/tutorado_participantes')
+                    . view('templates/footer')
+            )
+            ->setStatusCode(ResponseInterface::HTTP_OK)
+            ->setContentType('text/html');
     }
-///ELIMINAR
-    public function findTutoria(int $idGrupo){
+
+    ///ELIMINAR
+    public function findTutoria(int $idGrupo): ResponseInterface
+    {
         $model     = model(TutoriaModel::class);
         $tutoria = $model->showTutorias($idGrupo);
 
-         $data = [
+        $data = [
             'title'   => 'Tutorias',
             'tutoria' =>  $tutoria,
         ];
 
-        return view('templates/header', $data)
-        . view('Tutorias/tutorado/tutoria_tutorias', $data)
-        . view('templates/footer');
+        return $this->response
+            ->setBody(
+                view('templates/header', $data)
+                    . view('Tutorias/tutorado/tutoria_tutorias')
+                    . view('templates/footer')
+            )
+            ->setStatusCode(ResponseInterface::HTTP_OK)
+            ->setContentType('text/html');
     }
 
-    public function createTutor(){
-        helper('form');
-
-        $umodel    = model(TutorModel::class);
-        $usuario   = $umodel->findUsuarios();
-        $nusuario  = [];
-        foreach ($usuario as $u) {
-            $nusuario[$u->Id_Usuario] = $u->Nombre; 
-        }
-        $data = [
-            'title'   => 'Agregar Tutor',
-            'usuario' => $nusuario,
-        ];
-
-        if($this->request->is('get')){
-            return view('templates/header', $data)
-                . view('Tutorias/tutorado/tutorado_agregar', $data)
-                . view('templates/footer');
-        }
-
-        $post= $this->request->getPost(['Id', 'Id_Usuario', 'Inicia', 'Termina']);
-        $sonValidos = $this->validateData($post, [
-            'Id_Usuario'   => 'required|numeric',
-            'Inicia'       => 'required|valid_date',
-            'Termina'      => 'valid_date',
-        ]);
-
-        if (! $sonValidos ) {
-		    return view('templates/header', $data)
-                . view('Tutorias/tutorado/tutorado_agregar')
-                . view('templates/footer');
-        }
-
-        $model =  model(TutorModel::class);
-
-        $tutor = new TutorEntity();
-        $tutor->Id_Usuario   = $post['Id_Usuario'];
-        $tutor->Inicia       = $post['Inicia'];
-        $tutor->Termina      = $post['Termina'];
-
-        $model->save($tutor);
-
-        return $this->response->redirect(url_to('\\' . Tutorado::class .'::showTutores'));
-    }
-
-    public function showGrupos(int $id){
-        $model = model(TutoradoModel::class);
-
-        $grupos = $model->findGrupo($id);
-
-        $data = [
-            'title' => 'Grupos',
-            'grupos' => $grupos,
-       ];
-
-        return view('templates/header', $data)
-            . view('Tutorias/tutorado/tutoria_grupos', $data)
-            . view('templates/footer');
-    }
-
-    public function gruposMenu(int $id, int $id_grupo){
-       
-        $model     = model(TutoradoModel::class);
-        $tutorados = $model->findTutorado($id, $id_grupo);
-        $grupo     = $model->grupoAlum($id);
-        $idGrupo   = $model->grupoId($id_grupo);
-        
-
-
-         $data = [
-            'title' => 'Tutorados',
-            'grupo'     => $grupo,
-            'tutorados' => $tutorados,
-            'idGrupo'   => $idGrupo,
-        ];
-
-        return view('templates/header', $data)
-            . view('Tutorias/tutorado/tutoria_grupos_menu', $data)
-            . view('templates/footer');
-    }
-
-    public function tutoradosTutor(int $id, int $id_grupo)
+    public function tutoradosTutor(int $id, int $id_grupo): ResponseInterface
     {
-        $model     = model(TutoradoModel::class);
-        $tutorados = $model->grupoId($id_grupo);
+        $tutorados = $this->tutoradoM->grupoId($id_grupo);
 
         $amodel     = model(AlumnoModel::class);
         $alumno     = $amodel->findAlumn();
@@ -500,368 +383,142 @@ class Tutorado extends BaseController {
             'tutorados' => $tutorados,
             'alumno'    => $nalumno,
         ];
-        return view('templates/header', $data)
-        . view('Tutorias/tutorado/tutorado_tutorados', $data)
-        . view('templates/footer');
+        return $this->response
+            ->setBody(
+                view('templates/header', $data)
+                    . view('Tutorias/tutorado/tutorado_tutorados')
+                    . view('templates/footer')
+            )
+            ->setStatusCode(ResponseInterface::HTTP_OK)
+            ->setContentType('text/html');
     }
 
-    public function addIndividual(int $id_usuario){
-        helper('form');
- 
-        $tmodel     = model(IndividualModel::class);
-        $tutorado   = $tmodel->tutoradosSelect($id_usuario);
-        $ntutorado  = [];
-        foreach ($tutorado as $t) {
-            $ntutorado[$t->Id_Tutorado] = $t->Alumno;
-        }
-        $data = [
-            'title'        => 'Agregar almuno a tutoría individual',
-            'tutorado'     => $ntutorado,
-        ];
-        
-        if($this->request->is('get')) {
-            return view('templates/header', $data)
-		        . view('Tutorias/tutorado/tutorado_agregarIndividual')
-		        . view('templates/footer');
-        }
-         
-        $post = $this->request->getPost(['Id_Tutorado', 'Horas', 'Fecha']);
-
-        $sonValidos = $this->validateData($post, [
-            'Id_Tutorado'   => 'required|numeric',
-            'Horas'         => 'required|numeric',
-            'Fecha'         => 'required|valid_date',
-        ]);
-
-        if (! $sonValidos ) {
-		    return view('templates/header', $data)
-                . view('Tutorias/tutorado/tutorado_agregarIndividual')
-                . view('templates/footer');
-        }
-        
-        $model =  model(IndividualModel::class);
-        
-        $tutoria = new CanalizacionEntity();
-        $tutoria->Id_Tutorado   = $post['Id_Tutorado'];
-        $tutoria->Horas         = $post['Horas'];
-        $tutoria->Fecha         = $post['Fecha'];
-
-        $model->save($tutoria);
-        $usuario = session_get('usuario');
-        return $this->response->redirect(url_to('\\' . Tutorado::class .'::showCanalizacion', $usuario->Id));
-
-    }
-
-    public function showCanalizacion(int $id, int $id_grupo)
+    /**
+     * Muestra las asistencias del grupo
+     * @param int $id ID Tutoria Grupal
+     * @return ResponseInterface
+     */
+    public function showTutoriaAsistencia(int $id): ResponseInterface
     {
-        $model = model(TutoradoModel::class);
-
-        $canalizaciones = $model->tutoradosIndividuales($id, $id_grupo);
-
-        if (empty($canalizaciones) ) {
-            throw new PageNotFoundException('No se encontro un grupo');   
-        }
-        $data = [
-            'title'          => 'Tutoria Individual',
-            'canalizaciones' => $canalizaciones,
-        ];
-
-        return view('templates/header', $data)
-        . view('Tutorias/tutorado/tutorados_canalizacion', $data)
-        . view('templates/footer');
-
-    }
-
-    public function addCanalizacion(int $idAlumno, int $idGrupo){
-        
- 
-        $model   = model(TutoradoModel::class);
-        $tutoria = $model->tutoradosTutoria($idAlumno,$idGrupo);
-        
-        $dmodel         = model(CanalizacionModel::class);
-        $departamento   = $dmodel->findDepartamento();
-        $ndepartamento  = [];
-        foreach ($departamento as $d) {
-            $ndepartamento[$d->Id] = $d->Nombre;
-        }
-        $data = [
-            'title'        => 'Crear un nueva canalización',
-            'tutoria'      => $tutoria,
-        ];
-        
-        $data['departamento'] = $ndepartamento;
-        if($this->request->is('get')) {
-            return view('templates/header', $data)
-		        . view('Tutorias/tutorado/tutorado_canalizacion_add')
-		        . view('templates/footer');
-        }
-        helper('form');
-        $post = $this->request->getPost(['Id_Departamento', 'Id_Tutoria', 'Fecha', 'Diagnostico', 'Actividades']);
-
-        $sonValidos = $this->validateData($post, [
-            'Id_Departamento'    => 'required|numeric',
-            'Id_Tutoria'         => 'required|numeric',
-            'Fecha'              => 'required|valid_date',
-            'Diagnostico'        => 'required|max_length[255]|min_length[3]',
-            'Actividades'        => 'required|max_length[255]|min_length[3]',
-            
-        ]);
-
-        if (! $sonValidos ) {
-		    return view('templates/header', $data)
-                . view('Tutorias/tutorado/tutorado_canalizacion_add')
-                . view('templates/footer');
-        }
-        
-        $model =  model(CanalizacionModel::class);
-        
-        $tutoria = new CanalizacionEntity();
-        $tutoria->Id_Departamento   = $post['Id_Departamento'];
-        $tutoria->Id_Tutoria        = $post['Id_Tutoria'];
-        $tutoria->Fecha             = $post['Fecha'];
-        $tutoria->Diagnostico       = $post['Diagnostico'];
-        $tutoria->Actividades       = $post['Actividades'];
-
-        $model->save($tutoria);
-        $usuario = session_get('usuario');
-        return $this->response->redirect(url_to('\\' . Tutorado::class .'::showCanalizacion', $usuario->Id));
-
-    }
-
-    public function alumnoCanalizacion(int $idAlumno, int $idGrupo){
-        $model = model(TutoradoModel::class);
-
-        $canalizacion = $model->canalizacionAlumno($idAlumno,$idGrupo);
-        $tutoria = $model->tutoria($idAlumno,$idGrupo);
-
-        $data = [
-            'title'             => 'Canalizaciones del alumno',
-            'canalizacion'      => $canalizacion,
-            'tutoria'           => $tutoria,
-        ];
-        
-        return view('templates/header', $data)
-        . view('Tutorias/tutorado/tutorado_canalizaciones', $data)
-        . view('templates/footer');
-    }
-
-    public function showActividad()
-    {
-        $model = model(ActividadModel::class);
-
-        $actividades = $model->find();
-
-        $data = [
-            'title' => 'Actividades',
-            'actividades' => $actividades,
-        ];
-
-        return view('templates/header', $data)
-        . view('Tutorias/actividades/actividades_crear', $data)
-        . view('templates/footer');
-    }
-
-
-    public function crearActividad() {
-        $model = model(ActividadModel::class);
-
-        $actividades = $model->find();
-        helper('form');
-
-        $data = [
-            'title' => 'Agrega una nueva actividad',
-            'actividades' => $actividades,
-        ];
-
-        $post = $this->request->getPost(['Descripcion']);
-
-        $sonValidos = $this->validateData($post, [
-            'Descripcion'      => 'required|required|max_length[255]|min_length[3]',
-        ]);
-
-        if (! $sonValidos ) {
-		    return view('templates/header', $data)
-                . view('Tutorias/actividades/actividades_crear', $data)
-                . view('templates/footer');
-        }
-
-        $model =  model(ActividadModel::class);
-
-        $actividad = new ActividadEntity();
-        $actividad -> Descripcion = $post['Descripcion'];
-
-        $model->save($actividad);
-
-        return $this->response->redirect(url_to('\\' . Tutorado::class .'::showActividad'));
-
-    }
-    public function delateActividad(int $id) {
-        $model = model(ActividadModel::class);
-        $model ->delete($id);
-
-        return $this->response->redirect(url_to('\\' . Tutorado::class . '::showActividad'));
-
-    }
-
-    public function tutoriaAsistencia(int $id){
-        helper('form');
-        $tmodel = model(TutoradoModel::class);
         $model = model(TutoriaModel::class);
-       
+
         $tutoria = $model->findTutoria($id);
-        $grupo   = $model->showGrupo($id);
         $tgrupal = $model->tutoriaGrupal($id);
 
 
-        $amodel = model(AlumnoModel::class);
-        $alumnos = $amodel->findTutorados($id);
+        $asistencia = $this->tutoradoM->showAsistencia($id);
 
         $data = [
-            'title' => 'Agregar Alumnos',
-            'grupo'     => $grupo,
-            'alumnos'   => $alumnos, 
+            'title' => 'Asistencia Alumnos',
             'tutoria'   => $tutoria,
-            'tgrupal'   => $tgrupal,    
+            'tgrupal'   => $tgrupal,
+            'listaAsistencia' => $asistencia,
         ];
-        if($this->request->is('get')) {
-            return view('templates/header', $data)
-                . view('Tutorias/tutorado/tutoria_asistencia')
-                . view('templates/footer');
-        }
-        $tutorados = $tmodel->showTutorados();
+        return $this->response
+            ->setBody(
+                view('templates/header', $data)
+                    . view('Tutorias/tutorado/tutoria_asistencia')
+                    . view('templates/footer')
+            )
+            ->setStatusCode(ResponseInterface::HTTP_OK)
+            ->setContentType('text/html');
+    }
+
+    /**
+     * Guarda las asistencias del grupo
+     * @param int $id ID Tutoria Grupal
+     * @return ResponseInterface|string
+     */
+    public function tutoriaAsistencia(int $id): ResponseInterface
+    {
+        helper('form');
+        $model = model(TutoriaModel::class);
         // Recibiendo datos
         $post   = $this->request->getPost(['Id_Tutoria', 'alumnos', 'Fecha']);
-       //var_dump($post);
-       //die;
-       
+
         $sonValidos = $this->validateData($post, [
             'Id_Tutoria'   => 'required|numeric', // Campo oculto
             'alumnos'      => 'required',
             'Fecha'        => 'required|valid_date',
         ]);
 
-        if (! $sonValidos ) {
-		    return view('templates/header', $data)
-        . view('Tutorias/tutorado/tutoria_asistencia', $data)
-        . view('templates/footer');
+        if (! $sonValidos) {
+            session()->setFlashdata('error', $this->validator->getErrors());
+            return $this->response->redirect(url_to('\\' . Tutorado::class . '::showTutoriaAsistencia', $id));
         }
-        //var_dump($post);
-        //die;
-        $tutorado  =   $model->guardarTutorados(
+
+        if (!$model->guardarTutorados(
             $post['Id_Tutoria'],
             $post['alumnos'],
             $post['Fecha'],
-            
-        );
-        $usuario = session_get('usuario');
-        return $this->response->redirect(url_to('\\' . Tutorado::class .'::findTutorados', $usuario->Id));
+        )) {
+            session()->setFlashdata('error', ['error' => 'Error en el proceso de guardar la asistencia.']);
+            return $this->response->redirect(url_to('\\' . Tutorado::class . '::showTutoriaAsistencia', $id));
+        }
 
+        session()->setFlashdata('mensaje', 'Asistencia del grupo guardada correctamente.');
+        return $this->response->redirect(url_to('\\' . Tutorado::class . '::showTutoriaAsistencia', $id));
     }
 
-    public function showAsistencia(int $id){
-        $model = model(TutoradoModel::class);
-
-        $asistencia = $model->showAsistencia($id);
-
-        $data = [
-            'title' => 'Asistencia',
-            'asistencia' => $asistencia,
-       ];
-
-        return view('templates/header', $data)
-            . view('Tutorias/tutorado/tutorado_show_asistencia', $data)
-            . view('templates/footer');
-    }
-
-    public function alumAcreditado(int $id){
+    /**
+     * Muestra la vista de los alumnos acreditados
+     * @param int $id ID Tutoria Grupal
+     * @return ResponseInterface
+     */
+    public function showAlumAcreditado(int $id): ResponseInterface
+    {
         helper('form');
         $model = model(TutoriaModel::class);
-        $tuto = $model->tutoriaGrupal($id);
 
-        $amodel = model(AlumnoModel::class);
-        $alumnos = $amodel->findTutorados($id);
+        $tuto = $model->tutoriaGrupal($id);
+        $tutoria = $model->findTutoria($id);
+        $acreditados = $this->tutoradoM->showAcreditados($id);
 
         $data = [
-            'title'     => 'Agregar Alumnos',
-            'alumnos'   => $alumnos,
-            'tuto'      => $tuto,   
+            'title'     => 'Acreditar Alumnos',
+            'tutoria'   => $tutoria,
+            'listaAcreditados' => $acreditados,
+            'tuto'      => $tuto,
         ];
-        if($this->request->is('get')) {
-            return view('templates/header', $data)
-                . view('Tutorias/tutorado/tutoria_acreditar')
-                . view('templates/footer');
-        }
-        // Recibiendo datos
-        $post   = $this->request->getPost(['alumnos', 'Fecha']);
-       //var_dump($post);
-       //die;
-       
+        return $this->response
+            ->setBody(
+                view('templates/header', $data)
+                    . view('Tutorias/tutorado/tutoria_acreditar')
+                    . view('templates/footer')
+            )
+            ->setStatusCode(ResponseInterface::HTTP_OK)
+            ->setContentType('text/html');
+    }
+
+    /**
+     * Funcion para acreditar grupos o alumno
+     * @param int $id ID Tutoria Grupal
+     * @return ResponseInterface
+     */
+    public function alumAcreditado(int $id): ResponseInterface
+    {
+        helper('form');
+        $model = model(TutoriaModel::class);
+
+        $post = $this->request->getPost(['alumnos', 'Fecha']);
+
         $sonValidos = $this->validateData($post, [
             'alumnos'      => 'required',
             'Fecha'        => 'required|valid_date',
         ]);
 
-        if (! $sonValidos ) {
-		    return view('templates/header', $data)
-        . view('Tutorias/tutorado/tutoria_acreditar', $data)
-        . view('templates/footer');
+        if (! $sonValidos) {
+            session()->setFlashdata('error', $this->validator->getErrors());
+            return $this->response->redirect(url_to('\\' . Tutorado::class . '::showAlumAcreditado', $id));
         }
-        //var_dump($post);
-        //die;
-        $tutorado  =   $model->guardarAcreditados(
+        if (!$model->guardarAcreditados(
             $post['alumnos'],
             $post['Fecha'],
-            
-        );
-        $usuario = session_get('usuario');
-        return $this->response->redirect(url_to('\\' . Tutorado::class .'::showTutorias', $usuario->Id));
-
-    }
-
-    public function impInforme(int $id_grupo){
-        $dompdf = new Dompdf();
-
-        $model          = model(TutoradoModel::class);
-        $actividades    = $model->actividad($id_grupo);
-        $tutorados      = $model->informe($id_grupo);
-        $grupo          = $model->grupoTutoria($id_grupo);
-        $participantes  = $model->contParticipantes($id_grupo);
-        $mujeres        = $model->contMujeres($id_grupo);
-        $hombres        = $model->contHombres($id_grupo);
-
-        $dompdf->set_option("enable_remote", true);
-        $data = [
-            'title'         => 'INFORME',
-            'actividades'     => $actividades,
-            'tutorados'     => $tutorados,
-            'grupo'         => $grupo,
-            'participantes' => $participantes,
-            'mujeres'       => $mujeres,
-            'hombres'       => $hombres,
-        ];
-        $dompdf->loadHtml(view('Tutorias/Pdf/informe', $data));
-        $dompdf->setPaper('Letter', 'landscape');
-        $dompdf->render();
-        $dompdf->stream();
-    }
-
-    public function impSeguimiento(int $id_canalizacion){
-        $dompdf = new Dompdf();
-
-        $model      = model(TutoradoModel::class);
-        $cana       = $model->seguimiento($id_canalizacion);
-        $dmodel     = model(DepartamentoModel::class);
-        $depas      = $dmodel->findDepartamento();
-
-        $dompdf->set_option("enable_remote", true);
-        $data = [
-            'title'         => 'SEGUIMIENTO',
-            'cana'          => $cana,
-            'depas'         => $depas,
-            ];
-        $dompdf->loadHtml(view('Tutorias/Pdf/seguimiento', $data));
-        $dompdf->setPaper('Letter', 'landscape');
-        $dompdf->render();
-        $dompdf->stream();
+        )) {
+            session()->setFlashdata('error', 'Error en el proceso de guardar acreditados.');
+            return $this->response->redirect(url_to('\\' . Tutorado::class . '::showAlumAcreditado', $id));
+        }
+        session()->setFlashdata('mensaje', 'Acreditacion guardada correctamente.');
+        return $this->response->redirect(url_to('\\' . Tutorado::class . '::showAlumAcreditado', $id));
     }
 }

@@ -68,6 +68,7 @@ $routes->group('rol',['filter' => 'sessionfilter:SuperUsuario'], function($route
 $routes->group('rol', ['filter' => 'sessionfilter:Docente'], function($routes) {
     //Docentes
     $routes->get('curso/concluido/(:num)',                    [Curso::class, 'cursoConcluido']);
+    //$routes->get('curso/encuesta/ver/(:num)',                 [Curso::class, 'encuesta']); checar que se vizualice para docentes
     $routes->post('curso/encuesta/guardar/(:num)',            [Curso::class, 'saveEncuesta']);//
     //$routes->get('curso/resultado/(:num)/(:num)',             [Curso::class, 'userEncuesta']);
     $routes->get('curso/visualizar/(:num)',                   [Curso::class, 'cursos']);

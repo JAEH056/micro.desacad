@@ -1,6 +1,7 @@
 <?php
 
 use App\Controllers\Actualizacion\Curso;
+
 $ID = session()->get('usuario')->Id
 ?>
 <!DOCTYPE html>
@@ -60,7 +61,7 @@ $ID = session()->get('usuario')->Id
                                     </div>
                                 </div>
                                 <div class="card-footer bg-transparent px-5 py-4">
-                                    <div class="small text-center"><a class="btn btn-block btn-secondary" href="<?= base_url('da/rol/curso/visualizar/'. $ID ) ?>">Acceder</a></div>
+                                    <div class="small text-center"><a class="btn btn-block btn-secondary" href="<?= base_url('da/rol/curso/visualizar/' . $ID) ?>">Acceder</a></div>
                                 </div>
                             </div>
                         </div>
@@ -76,7 +77,24 @@ $ID = session()->get('usuario')->Id
                                     </div>
                                 </div>
                                 <div class="card-footer bg-transparent px-5 py-4">
-                                    <div class="small text-center"><a class="btn btn-block btn-success" href="<?= base_url('da/rol/curso/imparte/'. $ID ) ?>">Acceder</a></div>
+                                    <div class="small text-center"><a class="btn btn-block btn-success" href="<?= base_url('da/rol/curso/imparte/' . $ID) ?>">Acceder</a></div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Menu Tutorias -->
+                        <div class="col-xl-5 col-lg-6 col-md-8 col-sm-11 mt-4">
+                            <div class="card text-center h-100">
+                                <div class="card-body px-5 pt-5 d-flex flex-column align-items-between">
+                                    <div>
+                                        <div class="h3 text-warning">Menú Tutorias</div>
+                                        <p class="text-muted mb-4">Página principal de tutorias</p>
+                                    </div>
+                                    <div class="icons-org-join align-items-center mx-auto">
+                                        <i class="icon-user text-warning" data-feather="users"></i>
+                                    </div>
+                                </div>
+                                <div class="card-footer bg-transparent px-5 py-4">
+                                    <div class="small text-center"><a class="btn btn-block btn-warning" href="<?= base_url('ta/rol/tutorado/inicio') ?>">Acceder</a></div>
                                 </div>
                             </div>
                         </div>

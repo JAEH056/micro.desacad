@@ -14,7 +14,7 @@ class PeriodoModel extends Model
         return $this->where('Id', $id)->first();
     }
     
-    public function findAll(int $limit = 0, int $offset = 0) {
+    public function findAll(int $limit = null, int $offset = 0) {
         $sql = <<<EOL
             SELECT p.*,
                 COUNT(c.Id) = 0 AS Puede_Borrar

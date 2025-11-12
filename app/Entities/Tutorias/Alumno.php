@@ -1,12 +1,7 @@
 <?php
+
 namespace App\Entities\Tutorias;
 
 use CodeIgniter\Entity\Entity;
 
-class Alumno extends Entity {
-
-
-
-}
-
-?>
+class Alumno extends Entity {}

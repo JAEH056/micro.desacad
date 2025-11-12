@@ -72,7 +72,7 @@ use App\Controllers\Tutorias\Tutorado;
 <div class="card mt-3">
     <div class="card-header">
         <div class="row justify-content-between align-items-center">
-            <span class="col-sm-2">Grupo de alumnos</span>
+            <span class="col-sm-2">Alumnos acreditados</span>
         </div>
     </div>
     <div class="card-body">
@@ -82,20 +82,19 @@ use App\Controllers\Tutorias\Tutorado;
                     <th>Número de control</th>
                     <th>Alumno</th>
                     <th>Carrera</th>
-                    <th>Asist./Act.</th>
-                    <th>Tutoria</th>
+                    <th>Fecha de Acreditado</th>
                 </tr>
             </thead>
             <tbody>
-                <?php foreach ($listaAcreditados as $tuto): ?>
-                    <tr>
-                        <td><?= esc($tuto->Nc) ?></td>
-                        <td><?= esc($tuto->Nombre) ?></td>
-                        <td><?= esc($tuto->Programa) ?></td>
-                        <td><?= esc($tuto->Act_Asist) . '/' . esc($tuto->Num_actividades) ?></td>
-                        <td><?= (($tuto->acreditado ?? 0) == 0) ? '<p class="text-danger">Sin acreditar</p>' : '<p class="text-success">Acreditado</p>' ?></td>
-                    </tr>
-                <?php endforeach; ?>
+                <?php foreach ($listaAcreditados as $tuto): if ($tuto->acreditado != 0): ?>
+                        <tr>
+                            <td><?= esc($tuto->Nc) ?></td>
+                            <td><?= esc($tuto->Nombre) ?></td>
+                            <td><?= esc($tuto->Programa) ?></td>
+                            <td><?= esc($tuto->Act_Asist) ?></td>
+                        </tr>
+                <?php endif;
+                endforeach; ?>
             </tbody>
         </table>
     </div>

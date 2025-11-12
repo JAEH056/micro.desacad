@@ -1,16 +1,37 @@
 <?php
+
 use App\Controllers\Tutorias\Tutorado;
 ?>
 
 <div class="card mt-n10">
     <div class="card-header">
-        <div class="row justify-content-between align-items-center">
-            <span class="col-sm-2"><?= esc($title) ?></span>
-            <a class="col-sm-auto" href="<?= url_to('\\' . Tutorado::class . '::createTutoria', $grupo->Id_Grupo)?>" data-bs-toggle="tooltip" data-bs-title="Nuevo Tutoría"><i class="fa-solid fa-circle-plus" style="font-size: 2em;"></i></a>
+        <div class="row d-flex justify-content-between align-items-end">
+            <div class="col-sm-6">
+                <span><?= esc($title) ?></span>
+            </div>
+            <div class="col-sm-auto d-flex gap-2">
+                <a class="btn btn-success" href="<?= url_to('\\' . Tutorado::class . '::showAlumAcreditado', $grupo->Id_Grupo) ?>">
+                    <i class="fa-solid fa-bookmark"></i>
+                    <p class="my-0 ms-1">Acreditar</p>
+                </a>
+                <a class="btn btn-primary" href="<?= url_to('\\' . Tutorado::class . '::showCreateTutoria', $grupo->Id_Grupo) ?>">
+                    <i class="fa-solid fa-circle-plus"></i>
+                    <p class="my-0 ms-1">Nueva Tutoría</p>
+                </a>
+            </div>
         </div>
     </div>
-    <div class="card-body"> 
-        <table class="TablaBonita"> 
+    <!-- Envia la lista de errores al formulario -->
+    <?php if (session()->getFlashdata('mensaje')): ?>
+        <div class="alert alert-success">
+            <div class="position-absolute top-0 end-0 mt-2 me-2">
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            <?= session()->getFlashdata('mensaje') ?>
+        </div>
+    <?php endif; ?>
+    <div class="card-body">
+        <table class="TablaBonita">
             <thead>
                 <tr>
                     <th>Actividad</th>
@@ -22,18 +43,18 @@ use App\Controllers\Tutorias\Tutorado;
             <tbody>
                 <?php foreach ($tutorias as $tuto): ?>
                     <tr>
-                       <td><?= esc($tuto->Descripcion) ?></td>                
-                       <td><?= esc($tuto->Horas) ?></td>
-                       <td><?= esc($tuto->Fecha) ?></td>
-                       <td>
-                            <a href="<?= url_to('\\' . Tutorado::class .'::tutoriaAsistencia',$tuto->Id_Tutoria)?>" class="btn btn-datatable btn-icon btn-transparent-dark" data-bs-toggle="tooltip"  data-bs-title="Asistencias"><i class="fa-solid fa-users"></i></a>
-                            <a href="<?= url_to('\\' . Tutorado::class .'::alumAcreditado',$tuto->Id_Tutoria)?>" class="btn btn-datatable btn-icon btn-transparent-dark" data-bs-toggle="tooltip"  data-bs-title="Acreditar"><i class="fa-solid fa-pen-to-square"></i></a>
+                        <td><?= esc($tuto->Descripcion) ?></td>
+                        <td><?= esc($tuto->Horas) ?></td>
+                        <td><?= esc($tuto->Fecha) ?></td>
+                        <td>
+                            <a href="<?= url_to('\\' . Tutorado::class . '::showTutoriaAsistencia', $tuto->Id_Tutoria) ?>" class="btn btn-outline-dark">
+                                <i class="fa-solid fa-users"></i>
+                                <p class="ms-1 my-0">Asistencia</p>
+                            </a>
                         </td>
                     </tr>
                 <?php endforeach; ?>
             </tbody>
-        </table> 
-    </div> 
+        </table>
+    </div>
 </div>
-                                                
-        

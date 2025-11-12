@@ -73,9 +73,8 @@
         table,th,td {border: 1px solid black;}
         table   { 
             width: 100%;
-            height: 2%;}
-        th,td {
-               }
+            height: 2%;
+        }
         th{
             background-color: #CDCBC9 ;
         }
@@ -184,7 +183,7 @@
         <div class="c"></div>
         <p class="text" style=" padding: 0 10px 0 50px; margin: 0 auto;">NOMBRE(S) DEL INSTRUCTOR(A): <?= esc($curso->Instructor) ?></p>
         <div class="i"></div>
-        <p class="text" style="position: absolute; max-width: 400px; min-width: 400px; height: 200px; margin-left: 205px;">PERIODO: <?= esc($curso->Periodo) ?>    <span style="position: absolute; min-width: 100px; height: 200px; margin-left: 250px;">DURACIÓN: <?= esc($curso->Duracion) ?>hrs</span></p>
+        <p class="text" style="position: absolute; max-width: 400px; min-width: 400px; height: 200px; margin-left: 205px;"> PERIODO: <?= esc($curso->Periodo) ?>    <span style="position: absolute; min-width: 100px; height: 200px; margin-left: 290px;">DURACIÓN: <?= esc($curso->Duracion) ?>hrs</span></p>
         <br><div class="lt"></div><div class="fd"></div>
         <p class="text"style=" padding: 0 10px 0 205px; margin: 0 auto;">HORARIO: <?= esc($curso->Horario) ?></p>
         <div class="lt"></div><br>

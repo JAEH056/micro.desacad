@@ -132,7 +132,7 @@
                 height: 40px;
             }
             .tam{
-                align: center;
+                text-align: center;
                 margin-left:auto;margin-right:auto;
                 width: 70%;
                 text-align: center;
@@ -193,7 +193,7 @@
             </thead>
         </table>
         
-        <p style=""><b></b>
+        <p><b></b>
         <p style=" padding: 0 10px 0 50px; margin: 0 auto;"><b>Departamento o Instancia que atendió la problemática<span style=" padding: 0 10px 0 250px; margin: 0 auto;">Firma del / la estudiante</b></span></p>
         <p style=" padding: 0 10px 0 150px; margin: 0 auto;"><b>(Nombre y sello)</b></p>
         <br>

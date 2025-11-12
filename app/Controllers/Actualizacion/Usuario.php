@@ -129,7 +129,7 @@ class Usuario extends BaseController
         // En la función addPuesto usuarioModel para guardar puesto
         $modelp->addPuesto($Id_Usuario, $post['Id_Organigrama']);
         // En la función addGrado usuarioModel para guardar grado
-        
+
         if (!$this->asignarRol($post['Id_Organigrama'], $Id_Usuario)) {
             // Manejar el caso en que no se pudo asignar el rol
             return redirect()->to(url_to('\\' . Usuario::class . '::create'))->withInput()->with('errors', 'No se pudo asignar el rol');
@@ -277,7 +277,6 @@ class Usuario extends BaseController
         // 4) Redirigir con mensaje de éxito
         return redirect()->to(url_to('\\' . Usuario::class . '::updateAccount'))
             ->with('message', 'Puesto actualizado correctamente');
-        
     }
 
     /**
@@ -302,7 +301,7 @@ class Usuario extends BaseController
         }
 
 
-        
+
         $model->update($id, $post);
         return $this->response->redirect(url_to('\\' . Usuario::class . '::showAll'));
     }
